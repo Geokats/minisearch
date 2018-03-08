@@ -2,12 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "trie.h"
+#include "postingList.h"
+
 #define INIT_TEXT_SIZE 100
 #define INIT_STRING_LENGTH 50
 
 int removeStringIndex(char *str, int expIndex){
-  //Remove the first word of the string and check if it is the expected index
-  //If it is return 1, otherwise return 0
+  //Remove the first word of the string and convert it to an int
+  //If it equals the expected index return 1, otherwise return 0
 
   char *buffer;
   int i, j;
@@ -33,6 +36,8 @@ int removeStringIndex(char *str, int expIndex){
   }while(str[j] != '\0');
 
   index = atoi(buffer);
+  free(buffer);
+
   return index == expIndex;
 }
 
@@ -87,8 +92,9 @@ char **getInput(const char *fileName, int *size){
         text[textIndex] = malloc(curLength * sizeof(char));
         //TODO: Error checking
       }
-      else if(charIndex == curLength){
+      else if(charIndex + 1 == curLength){
         //If necessary increase string's length
+        //+1 is to make sure we always have an extra position for '\0'
         curLength *= 2;
         text[textIndex] = realloc(text[textIndex], curLength * sizeof(char));
         //TODO: Error checking
@@ -113,16 +119,16 @@ int main(int argc, char const *argv[]) {
   int textCount;
   char **text = getInput(inputFile, &textCount);
 
-  //Print text
-  for(int i = 0; i < textCount; i++){
-    printf("%d %s\n", i, text[i]);
-  }
+  trie *t = createTrie(text, textCount);
+  printTrie(t);
 
   //Free memory
   for(int i = 0; i < textCount; i++){
     free(text[i]);
   }
   free(text);
+
+  deleteTrie(t);
 
   return 0;
 }
