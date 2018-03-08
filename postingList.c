@@ -66,6 +66,17 @@ int getSizePL(postingList *pl){
   return size;
 }
 
+int getTotalAppearancesPL(postingList *pl){
+  int total = 0;
+
+  while(pl != NULL){
+    total += getCountPL(pl);
+    pl = getNextPL(pl);
+  }
+
+  return total;
+}
+
 void printPL(postingList *pl){
   printf("[ ");
   while(pl != NULL){

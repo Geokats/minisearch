@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "trie.h"
 #include "postingList.h"
@@ -111,16 +112,45 @@ char **getInput(const char *fileName, int *size){
   return text;
 }
 
-int main(int argc, char const *argv[]) {
-  //TODO: Get command line parameters
-  char *inputFile = "input/example.in";
-  int K = 10;
+int main(int argc, char * const *argv) {
+  //Get command line arguments
+  int c;
+  char *inputFile = NULL;
+  int k = 0;
 
+  while((c = getopt(argc, argv, "i:k:")) != -1){
+    switch(c){
+      case 'i':
+        inputFile = optarg;
+        break;
+      case 'k':
+        k = atoi(optarg);
+        break;
+    }
+  }
+  //Check arguments
+  if(inputFile == NULL || k == 0){
+    fprintf(stderr, "Usage: ./minisearch -i docfile -k K\n");
+    return 1;
+  }
+  else if(k <= 0 || k > 10){
+    fprintf(stderr, "Error: k must be between 1-10\n");
+    return 1;
+  }
+
+  //Read input file
   int textCount;
   char **text = getInput(inputFile, &textCount);
-
+  //Create trie from input
   trie *t = createTrie(text, textCount);
+
+
+  char *buffer;
+  int bufferSize;
+  //Command Line Interface
+
   printTrie(t);
+
 
   //Free memory
   for(int i = 0; i < textCount; i++){

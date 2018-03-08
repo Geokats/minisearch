@@ -12,6 +12,7 @@ postingList *getNextPL(postingList *pl);
 int getIndexPL(postingList *pl);
 int getCountPL(postingList *pl);
 int getSizePL(postingList *pl);
+int getTotalAppearancesPL(postingList *pl);
 
 void printPL(postingList *pl);
 

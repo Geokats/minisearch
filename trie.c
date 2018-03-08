@@ -85,9 +85,7 @@ void printWordRecTN(trieNode *tn){
 void printRecTN(trieNode *tn){
   if(tn->pl != NULL){
     printWordRecTN(tn);
-    printf(" ");
-    printPL(tn->pl);
-    printf("\n");
+    printf(" %d\n", getTotalAppearancesPL(tn->pl));
   }
 
   if(tn->child != NULL){
@@ -104,47 +102,6 @@ void printRecTN(trieNode *tn){
 struct trie{
   trieNode *head;
 };
-
-trie *createTrie(char **text, int textCount){
-  trie *t = malloc(sizeof(trie));
-  if(t == NULL){
-    return NULL;
-  }
-
-  t->head = NULL;
-
-  for(int i = 0; i < textCount; i++){
-    insertStringTrie(t, text[i], i);
-    //TODO: Error checking
-  }
-
-  return t;
-}
-
-void deleteTrieRec(trieNode *tn){
-  postingList *pl;
-
-  //Delete next nodes
-  if(tn->next != NULL){
-    deleteTrieRec(tn->next);
-  }
-  if(tn->child != NULL){
-    deleteTrieRec(tn->child);
-  }
-
-  //Delete current node
-  if((pl = getPostingListTN(tn)) != NULL){
-    deletePL(pl);
-  }
-  free(tn);
-}
-
-void deleteTrie(trie *t){
-  if(t->head != NULL){
-    deleteTrieRec(t->head);
-  }
-  free(t);
-}
 
 int insertWordTrie(trie *t, char *word, int textIndex){
   int wordIndex = 0;
@@ -247,6 +204,52 @@ int insertStringTrie(trie *t, char *str, int textIndex){
   }
 
   return 1;
+}
+
+trie *createTrie(char **text, int textCount){
+  trie *t = malloc(sizeof(trie));
+  if(t == NULL){
+    return NULL;
+  }
+
+  t->head = NULL;
+
+
+  for(int i = 0; i < textCount; i++){
+    printf("\rInserting text in trie (%d/%d lines) [%d%%]", i+1, textCount, (i+1)*100/textCount);
+    fflush(stdout);
+
+    insertStringTrie(t, text[i], i);
+    //TODO: Error checking
+  }
+  printf("\n");
+
+  return t;
+}
+
+void deleteTrieRec(trieNode *tn){
+  postingList *pl;
+
+  //Delete next nodes
+  if(tn->next != NULL){
+    deleteTrieRec(tn->next);
+  }
+  if(tn->child != NULL){
+    deleteTrieRec(tn->child);
+  }
+
+  //Delete current node
+  if((pl = getPostingListTN(tn)) != NULL){
+    deletePL(pl);
+  }
+  free(tn);
+}
+
+void deleteTrie(trie *t){
+  if(t->head != NULL){
+    deleteTrieRec(t->head);
+  }
+  free(t);
 }
 
 postingList *searchWordTrie(trie *t, char *word){
