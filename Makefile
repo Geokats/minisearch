@@ -1,8 +1,8 @@
 CC = gcc
 OUT = minisearch
-OBJ = minisearch.o postingList.o trie.o
+OBJ = minisearch.o textIndex.o postingList.o trie.o 
 
-all: minisearch postingList trie
+all: minisearch textIndex postingList trie
 	$(CC) $(OBJ) -o $(OUT)
 
 minisearch: minisearch.c
@@ -13,6 +13,9 @@ postingList: postingList.c postingList.h
 
 trie: trie.c trie.h
 	$(CC) -c trie.c
+
+textIndex: textIndex.c textIndex.h
+	$(CC) -c textIndex.c
 
 clean:
 	rm $(OUT) $(OBJ)

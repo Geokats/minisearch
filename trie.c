@@ -1,9 +1,11 @@
-#include "postingList.h"
 #include "trie.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+
+
+/********************************* Trie Node *********************************/
 
 typedef struct trieNode trieNode;
 
@@ -15,9 +17,9 @@ struct trieNode{
   postingList *pl;
 };
 
-//Trie Node functions
+// Constructor
 
-trieNode *createTN(trieNode *prev, trieNode *next, trieNode *parent, trieNode * child, char value, postingList *pl){
+trieNode *createTN(trieNode *prev, trieNode *next, trieNode *parent, trieNode *child, char value, postingList *pl){
   trieNode *tn = malloc(sizeof(trieNode));
   if(tn == NULL){
     return NULL;
@@ -33,6 +35,16 @@ trieNode *createTN(trieNode *prev, trieNode *next, trieNode *parent, trieNode * 
   return tn;
 }
 
+//Destructor
+
+void deleteTN(trieNode *t){
+  if(t->pl != NULL){
+    deletePL(t->pl);
+  }
+  free(t);
+}
+
+// Accessors
 
 char getValueTN(trieNode *tn){
   return tn->value;
@@ -58,6 +70,7 @@ trieNode *getChildTN(trieNode *tn){
   return tn->child;
 }
 
+// Mutators
 
 void setPostingListTN(trieNode *tn, postingList *pl){
   tn->pl = pl;
@@ -74,6 +87,8 @@ void setPrevTN(trieNode *tn, trieNode *prev){
 void setChildTN(trieNode *tn, trieNode *child){
   tn->child = child;
 }
+
+// Functions for printing the trie
 
 void printWordRecTN(trieNode *tn){
   if(tn->parent != NULL){
@@ -97,7 +112,8 @@ void printRecTN(trieNode *tn){
   }
 }
 
-//Trie functions
+
+/************************************ Trie ************************************/
 
 struct trie{
   trieNode *head;
@@ -206,7 +222,7 @@ int insertStringTrie(trie *t, char *str, int textIndex){
   return 1;
 }
 
-trie *createTrie(char **text, int textCount){
+trie *createTrie(textIndex *ti){
   trie *t = malloc(sizeof(trie));
   if(t == NULL){
     return NULL;
@@ -214,22 +230,24 @@ trie *createTrie(char **text, int textCount){
 
   t->head = NULL;
 
+  int textCount = getTextCountTI(ti);
 
   for(int i = 0; i < textCount; i++){
+    //Print progress
     printf("\rInserting text in trie (%d/%d lines) [%d%%]", i+1, textCount, (i+1)*100/textCount);
     fflush(stdout);
 
-    insertStringTrie(t, text[i], i);
+    insertStringTrie(t, getTextTI(ti, i), i);
     //TODO: Error checking
   }
-  printf("\n");
+  printf(" Done!\n");
 
   return t;
 }
 
-void deleteTrieRec(trieNode *tn){
-  postingList *pl;
+// Destructor
 
+void deleteTrieRec(trieNode *tn){
   //Delete next nodes
   if(tn->next != NULL){
     deleteTrieRec(tn->next);
@@ -239,10 +257,7 @@ void deleteTrieRec(trieNode *tn){
   }
 
   //Delete current node
-  if((pl = getPostingListTN(tn)) != NULL){
-    deletePL(pl);
-  }
-  free(tn);
+  deleteTN(tn);
 }
 
 void deleteTrie(trie *t){
@@ -282,4 +297,20 @@ postingList *searchWordTrie(trie *t, char *word){
 
 void printTrie(trie *t){
   printRecTN(t->head);
+}
+
+void printFrequencyTrie(trie *t, char *word){
+  postingList *pl = searchWordTrie(t, word);
+  printf("%s %d\n", word, pl != NULL ? getTotalAppearancesPL(pl) : 0);
+}
+
+void printTextFrequencyTrie(trie *t, int textIndex, char* word){
+  postingList *pl = searchWordTrie(t, word);
+  while(pl != NULL){
+    if(getIndexPL(pl) == textIndex){
+      break;
+    }
+    pl = getNextPL(pl);
+  }
+  printf("%d %s %d\n", textIndex, word, pl != NULL ? getTotalAppearancesPL(pl) : 0);
 }
