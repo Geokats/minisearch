@@ -1,9 +1,9 @@
 CC = gcc
 OUT = minisearch
-OBJ = minisearch.o textIndex.o postingList.o trie.o 
+OBJ = minisearch.o textIndex.o postingList.o trie.o
 
 all: minisearch textIndex postingList trie
-	$(CC) $(OBJ) -o $(OUT)
+	$(CC) $(OBJ) -lm -o $(OUT)
 
 minisearch: minisearch.c
 	$(CC) -c minisearch.c

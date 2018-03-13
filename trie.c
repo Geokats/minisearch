@@ -1,8 +1,167 @@
 #include "trie.h"
 
+#include <sys/ioctl.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <ctype.h>
+#include <math.h>
+
+float k1 = 1.2;
+float b = 0.75;
+
+/****************************** Helping Functions *****************************/
+
+void printSpaces(int count){
+  for(int i = 0; i < count; i++){
+    printf(" ");
+  }
+}
+
+void printUnderline(int *underline, int length){
+  //Underlines marked spots and resets the flag array
+  //If there are no marked spots it does nothing
+  int flag = 0;
+  for(int i = 0; i < length; i++){
+    if(underline[i]){
+      flag = 1;
+      break;
+    }
+  }
+
+  if(flag){
+    for(int i = 0; i < length; i++){
+      if(underline[i]){
+        putchar('^');
+      }
+      else{
+        putchar(' ');
+      }
+      underline[i] = 0;
+    }
+    putchar('\n');
+  }
+}
+
+void changeLine(int frontSpace, int *underline, int length){
+  putchar('\n');
+  printUnderline(underline, length);
+  printSpaces(frontSpace);
+}
+
+int isKeyword(char *str, char **keyWords){
+  for(int i = 0; keyWords[i] != NULL; i++){
+    if(strcmp(str, keyWords[i]) == 0){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+void printResult(int index, int textIndex, float score, char *str, char **keyWords){
+  //Prints the result of the search, keeping the appropriate format
+  //while also underlining the keywords int the string
+  struct winsize w;
+  ioctl(0, TIOCGWINSZ, &w);
+  int length = w.ws_col;
+  int frontSpace = printf("%d.(%d)[%.4f] ", index, textIndex, score);
+
+  int *underline = malloc(length * sizeof(int));
+  //TODO: Error checking
+  for(int i = 0; i < length; i++){
+    underline[i] = 0;
+  }
+
+  int bufferSize = 100;
+  int bufferIndex = 0;
+  char *buffer = malloc(bufferSize * sizeof(char));
+  //TODO: Error checking
+
+  int afterSpace = 1;
+  int spaceLeft = length - frontSpace;
+  for(int i = 0; str[i] != '\0'; i++){
+
+    if(isspace(str[i])){
+      if(bufferIndex > 0){
+        //Print the word in the buffer
+        buffer[bufferIndex] = '\0';
+
+        if(strlen(buffer) > spaceLeft){
+          //If there is no room change line first
+          changeLine(frontSpace, underline, length);
+          spaceLeft = length - frontSpace;
+        }
+
+        if(isKeyword(buffer, keyWords)){
+          //If it's a keyword mark the underline spots
+          for(int j = length - spaceLeft; j < length - spaceLeft + strlen(buffer); j++){
+            underline[j] = 1;
+          }
+        }
+
+        spaceLeft -= printf("%s", buffer);
+
+        bufferIndex = 0;
+      }
+
+      if(spaceLeft <= 0){
+        //Change line
+        changeLine(frontSpace, underline, length);
+        spaceLeft = length - frontSpace;
+      }
+
+      putchar(str[i]);
+      spaceLeft--;
+      afterSpace = 1;
+    }
+    else{
+      afterSpace = 0;
+
+      if(bufferIndex >= bufferSize - 2){
+        //If needed increase buffer size
+        bufferSize *= 2;
+        buffer = realloc(buffer, bufferSize * sizeof(char));
+        //TODO: Error checking
+      }
+
+      buffer[bufferIndex] = str[i];
+      bufferIndex++;
+    }
+
+  }
+
+
+
+
+  if(bufferIndex > 0){
+    //Print the word in the buffer
+    buffer[bufferIndex] = '\0';
+
+    if(strlen(buffer) > spaceLeft){
+      //If there is no room change line first
+      changeLine(frontSpace, underline, length);
+      spaceLeft = length - frontSpace;
+    }
+
+    if(isKeyword(buffer, keyWords)){
+      for(int j = length - spaceLeft; j < length - spaceLeft + strlen(buffer); j++){
+        underline[j] = 1;
+      }
+    }
+
+    spaceLeft -= printf("%s", buffer);
+
+    bufferIndex = 0;
+  }
+  changeLine(0, underline, length);
+
+
+
+  printf("\n");
+
+  free(buffer);
+  free(underline);
+}
 
 
 /********************************* Trie Node *********************************/
@@ -117,6 +276,7 @@ void printRecTN(trieNode *tn){
 
 struct trie{
   trieNode *head;
+  textIndex *ti;
 };
 
 int insertWordTrie(trie *t, char *word, int textIndex){
@@ -229,6 +389,7 @@ trie *createTrie(textIndex *ti){
   }
 
   t->head = NULL;
+  t->ti = ti;
 
   int textCount = getTextCountTI(ti);
 
@@ -313,4 +474,37 @@ void printTextFrequencyTrie(trie *t, int textIndex, char* word){
     pl = getNextPL(pl);
   }
   printf("%d %s %d\n", textIndex, word, pl != NULL ? getTotalAppearancesPL(pl) : 0);
+}
+
+void printQueryTrie(trie *t, char *q, int k){
+  postingList *pl = searchWordTrie(t, q);
+  if(pl == NULL){
+    printf("Nothing found...\n");
+    return;
+  }
+
+  int bestIndex;
+  float bestScore;
+
+  float n_qi = (float) getSizePL(pl);
+  float N = (float) getWordCountTI(t->ti);
+  float idf = log10((N - n_qi + 0.5) / (n_qi + 0.5));
+  float avgdl = (float) getWordCountTI(t->ti) / (float) getTextCountTI(t->ti);
+
+  for(postingList *iter = pl; iter != NULL; iter = getNextPL(iter)){
+    float D = textWordCountTI(t->ti, getIndexPL(iter));
+    float f = getCountPL(iter);
+    float score  = idf *(f * (k1+1) / (f + k1*(1-b + b*(D/avgdl))));
+
+    if(iter == pl){
+      bestScore = score;
+      bestIndex = getIndexPL(iter);
+    }
+    if(score > bestScore){
+      bestScore = score;
+      bestIndex = getIndexPL(iter);
+    }
+  }
+  char *keywords[] = {"dog", "the", "fun", NULL};
+  printResult(1, bestIndex, bestScore, getTextTI(t->ti, bestIndex), keywords);
 }

@@ -71,10 +71,11 @@ int main(int argc, char * const *argv) {
       }
     }
     else if(strcmp(cmd[0], "search") == 0){
-
+      printQueryTrie(t, cmd[1], k);
     }
     else if(strcmp(cmd[0], "help") == 0){
       printf("Minisearch commands:\n");
+      printf("\t-search\n");
       printf("\t-df\n");
       printf("\t-tf\n");
       printf("\t-help\n");

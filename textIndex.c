@@ -173,3 +173,8 @@ int getWordCountTI(textIndex *ti){
 int getTextCountTI(textIndex *ti){
   return ti->textCount;
 }
+
+int textWordCountTI(textIndex *ti, int index){
+  char *str = getTextTI(ti, index);
+  return countWords(str);
+}

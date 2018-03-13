@@ -14,5 +14,6 @@ postingList *searchWordTrie(trie *t, char *word);
 void printTrie(trie *t);
 void printFrequencyTrie(trie *t, char *word);
 void printTextFrequencyTrie(trie *t, int textIndex, char* word);
+void printQueryTrie(trie *t, char *q, int k);
 
 #endif
