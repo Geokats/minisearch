@@ -42,7 +42,7 @@ int main(int argc, char * const *argv) {
   //Command Line Interface
   char *buffer = NULL;
   size_t bufferSize = 0;
-  char *cmd[11]; //A command can have 11 words at most
+  char *cmd[12]; //A command can have 11 words at most
 
   printf(">/");
   while(getline(&buffer, &bufferSize, stdin) > 0){
@@ -50,6 +50,7 @@ int main(int argc, char * const *argv) {
     for(int i = 1; i <= 10; i++){
       cmd[i] = strtok(NULL, " \t\n"); //Get command parameters
     }
+    cmd[11] = NULL;
 
     if(strcmp(cmd[0], "exit") == 0){
       break;
@@ -71,7 +72,7 @@ int main(int argc, char * const *argv) {
       }
     }
     else if(strcmp(cmd[0], "search") == 0){
-      printQueryTrie(t, cmd[1], k);
+      printQueryTrie(t, &cmd[1], k);
     }
     else if(strcmp(cmd[0], "help") == 0){
       printf("Minisearch commands:\n");

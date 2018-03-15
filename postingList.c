@@ -24,16 +24,21 @@ postingList *createPL(int textIndex, int count){
 }
 
 int addAppearancePL(postingList *pl, int textIndex){
-  while(pl->textIndex != textIndex && pl->next != NULL){
+  postingList *temp;
+
+  while(textIndex > pl->textIndex && pl->next != NULL){
     //Go to the node with the same index or the end of the list
     pl = pl->next;
   }
+
   if(pl->textIndex == textIndex){
     pl->appearanceCount += 1;
     return 1;
   }
   else{
+    temp = pl->next;
     pl->next = createPL(textIndex, 1);
+    pl->next->next = temp;
     return pl->next != NULL;
   }
 }

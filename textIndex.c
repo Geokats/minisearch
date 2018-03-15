@@ -19,7 +19,7 @@ int removeStringIndex(char *str, int expIndex){
   int index;
 
   i = 0;
-  while(str[i] != ' '){
+  while(!isspace(str[i])){
     i++;
   }
 

@@ -476,35 +476,101 @@ void printTextFrequencyTrie(trie *t, int textIndex, char* word){
   printf("%d %s %d\n", textIndex, word, pl != NULL ? getTotalAppearancesPL(pl) : 0);
 }
 
-void printQueryTrie(trie *t, char *q, int k){
-  postingList *pl = searchWordTrie(t, q);
-  if(pl == NULL){
-    printf("Nothing found...\n");
-    return;
+int getMinIndex(postingList **pl, int size){
+  //Returns the index of the list that has the smallest index
+  int index = -1;
+  for(int i = 0; i < size; i++){
+    if(pl[i] != NULL){
+      if(index == -1 || getIndexPL(pl[i]) < index){
+        index = getIndexPL(pl[i]);
+      }
+    }
   }
+  return index;
+}
 
-  int bestIndex;
-  float bestScore;
 
-  float n_qi = (float) getSizePL(pl);
+void printQueryTrie(trie *t, char **q, int k){
+  postingList *pl[10];
+
+  float idf[10];
   float N = (float) getWordCountTI(t->ti);
-  float idf = log10((N - n_qi + 0.5) / (n_qi + 0.5));
   float avgdl = (float) getWordCountTI(t->ti) / (float) getTextCountTI(t->ti);
 
-  for(postingList *iter = pl; iter != NULL; iter = getNextPL(iter)){
-    float D = textWordCountTI(t->ti, getIndexPL(iter));
-    float f = getCountPL(iter);
-    float score  = idf *(f * (k1+1) / (f + k1*(1-b + b*(D/avgdl))));
+  for(int i = 0; i < 10; i++){
+    if(q[i] != NULL){
+      pl[i] = searchWordTrie(t, q[i]);
 
-    if(iter == pl){
-      bestScore = score;
-      bestIndex = getIndexPL(iter);
+      if(pl[i] != NULL){
+        float n_qi = (float) getSizePL(pl[i]);
+        idf[i] = log10((N - n_qi + 0.5) / (n_qi + 0.5));
+      }
     }
-    if(score > bestScore){
-      bestScore = score;
-      bestIndex = getIndexPL(iter);
+    else{
+      pl[i] = NULL;
     }
   }
-  char *keywords[] = {"dog", "the", "fun", NULL};
-  printResult(1, bestIndex, bestScore, getTextTI(t->ti, bestIndex), keywords);
+
+  int resultSize = 100;
+  int resultIndex = -1;
+  int *indices = malloc(resultSize * sizeof(int));
+  float *scores = malloc(resultSize * sizeof(float));
+  //TODO: Error checking
+
+  int curIndex;
+  while((curIndex = getMinIndex(pl, 10)) != -1){
+    float D = textWordCountTI(t->ti, curIndex);
+
+    resultIndex++;
+    if(resultIndex >= resultSize){
+      resultSize *= 2;
+      indices = realloc(indices, resultSize * sizeof(int));
+      scores = realloc(scores, resultSize * sizeof(float));
+      //TODO: Error checking
+    }
+
+    indices[resultIndex] = curIndex;
+    scores[resultIndex] = 0;
+
+    for(int i = 0; i < 10; i++){
+      if(pl[i] != NULL && getIndexPL(pl[i]) == curIndex){
+        float f = getCountPL(pl[i]);
+        scores[resultIndex] += idf[i] * (f * (k1+1) / (f + k1*(1-b + b*(D/avgdl))));
+
+        pl[i] = getNextPL(pl[i]);
+      }
+    }
+  }
+
+  resultSize = resultIndex + 1;
+
+  //Sort scores
+  for(int i = 0; i < k && i < resultSize; i++){
+    int maxIndex = i;
+    for(int j = i; j < resultSize; j++){
+      if(scores[j] > scores[maxIndex]){
+        maxIndex = j;
+      }
+    }
+    int tempIndex = indices[i];
+    float tempScore = scores[i];
+
+    indices[i] = indices[maxIndex];
+    scores[i] = scores[maxIndex];
+
+    indices[maxIndex] = tempIndex;
+    scores[maxIndex] = tempScore;
+  }
+
+  if(resultSize == 0){
+    printf("Nothing found.\n");
+  }
+  else{
+    for(int i = 0; i < k && i < resultSize; i++){
+      printResult(i+1, indices[i], scores[i], getTextTI(t->ti, indices[i]), q);
+    }
+  }
+
+  free(indices);
+  free(scores);
 }
