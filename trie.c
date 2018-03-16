@@ -259,7 +259,7 @@ void printWordRecTN(trieNode *tn){
 void printRecTN(trieNode *tn){
   if(tn->pl != NULL){
     printWordRecTN(tn);
-    printf(" %d\n", getTotalAppearancesPL(tn->pl));
+    printf(" %d\n", getSizePL(tn->pl));
   }
 
   if(tn->child != NULL){
@@ -278,6 +278,8 @@ struct trie{
   trieNode *head;
   textIndex *ti;
 };
+
+// Helping functions for insertions
 
 int insertWordTrie(trie *t, char *word, int textIndex){
   int wordIndex = 0;
@@ -382,6 +384,8 @@ int insertStringTrie(trie *t, char *str, int textIndex){
   return 1;
 }
 
+// Constructor
+
 trie *createTrie(textIndex *ti){
   trie *t = malloc(sizeof(trie));
   if(t == NULL){
@@ -428,6 +432,8 @@ void deleteTrie(trie *t){
   free(t);
 }
 
+// Trie Operations
+
 postingList *searchWordTrie(trie *t, char *word){
   int wordIndex = 0;
   trieNode *parent = NULL;
@@ -462,7 +468,7 @@ void printTrie(trie *t){
 
 void printFrequencyTrie(trie *t, char *word){
   postingList *pl = searchWordTrie(t, word);
-  printf("%s %d\n", word, pl != NULL ? getTotalAppearancesPL(pl) : 0);
+  printf("%s %d\n", word, pl != NULL ? getSizePL(pl) : 0);
 }
 
 void printTextFrequencyTrie(trie *t, int textIndex, char* word){
@@ -473,8 +479,9 @@ void printTextFrequencyTrie(trie *t, int textIndex, char* word){
     }
     pl = getNextPL(pl);
   }
-  printf("%d %s %d\n", textIndex, word, pl != NULL ? getTotalAppearancesPL(pl) : 0);
+  printf("%d %s %d\n", textIndex, word, pl != NULL ? getCountPL(pl) : 0);
 }
+
 
 int getMinIndex(postingList **pl, int size){
   //Returns the index of the list that has the smallest index
@@ -494,7 +501,7 @@ void printQueryTrie(trie *t, char **q, int k){
   postingList *pl[10];
 
   float idf[10];
-  float N = (float) getWordCountTI(t->ti);
+  float N = (float) getTextCountTI(t->ti);
   float avgdl = (float) getWordCountTI(t->ti) / (float) getTextCountTI(t->ti);
 
   for(int i = 0; i < 10; i++){
@@ -503,7 +510,7 @@ void printQueryTrie(trie *t, char **q, int k){
 
       if(pl[i] != NULL){
         float n_qi = (float) getSizePL(pl[i]);
-        idf[i] = log10((N - n_qi + 0.5) / (n_qi + 0.5));
+        idf[i] = log10((N - n_qi + 0.5) / (n_qi + 0.5)) / log10(2);
       }
     }
     else{
@@ -533,18 +540,25 @@ void printQueryTrie(trie *t, char **q, int k){
     scores[resultIndex] = 0;
 
     for(int i = 0; i < 10; i++){
-      if(pl[i] != NULL && getIndexPL(pl[i]) == curIndex){
-        float f = getCountPL(pl[i]);
-        scores[resultIndex] += idf[i] * (f * (k1+1) / (f + k1*(1-b + b*(D/avgdl))));
+      if(q[i] != NULL){
+        float f;
 
-        pl[i] = getNextPL(pl[i]);
+        if(pl[i] != NULL && getIndexPL(pl[i]) == curIndex){
+          f = getCountPL(pl[i]);
+          pl[i] = getNextPL(pl[i]);
+        }
+        else{
+          f = 0;
+        }
+
+        scores[resultIndex] += idf[i] * (f * (k1+1) / (f + k1*(1-b + b*(D/avgdl))));
       }
     }
   }
 
   resultSize = resultIndex + 1;
 
-  //Sort scores
+  //Sort k best scores
   for(int i = 0; i < k && i < resultSize; i++){
     int maxIndex = i;
     for(int j = i; j < resultSize; j++){
