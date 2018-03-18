@@ -24,6 +24,7 @@ postingList *createPL(int textIndex, int count){
 }
 
 int addAppearancePL(postingList *pl, int textIndex){
+  //TODO: Check for errors if adding node at the start of the list
   postingList *temp;
 
   while(textIndex > pl->textIndex && pl->next != NULL){
@@ -33,14 +34,16 @@ int addAppearancePL(postingList *pl, int textIndex){
 
   if(pl->textIndex == textIndex){
     pl->appearanceCount += 1;
-    return 1;
   }
   else{
     temp = pl->next;
     pl->next = createPL(textIndex, 1);
+    if(pl->next == NULL){
+      return 0;
+    }
     pl->next->next = temp;
-    return pl->next != NULL;
   }
+  return 1;
 }
 
 void deletePL(postingList *pl){

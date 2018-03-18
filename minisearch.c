@@ -35,8 +35,15 @@ int main(int argc, char * const *argv) {
 
   //Create index from input
   textIndex *ti = createTI(inputFile);
+  if(ti == NULL){
+    return 1;
+  }
   //Create trie from text index
   trie *t = createTrie(ti);
+  if(t == NULL){
+    deleteTI(ti);
+    return 1;
+  }
 
 
   //Command Line Interface

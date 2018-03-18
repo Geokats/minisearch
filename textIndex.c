@@ -88,7 +88,6 @@ textIndex *createTI(const char *fileName){
 
   FILE *fp = fopen(fileName, "r");
   if(fp == NULL){
-    //TODO: Error handling
     fprintf(stderr, "Error opening file\n");
     return NULL;
   }
@@ -106,8 +105,8 @@ textIndex *createTI(const char *fileName){
 
       ti->text[textIndex][charIndex] = '\0';
       if(!removeStringIndex(ti->text[textIndex], textIndex)){
-        printf("Index error\n");
-        //TODO: Error handling
+        fprintf(stderr, "Index error\n");
+        return NULL;
       }
 
       //Update word and text count
@@ -121,7 +120,9 @@ textIndex *createTI(const char *fileName){
         //If necessary increase array's size
         textSize *= 2;
         ti->text = realloc(ti->text, textSize * sizeof(char*));
-        //TODO: Error checking
+        if(ti->text == NULL){
+          return NULL;
+        }
       }
 
       curLength = 0;
@@ -131,14 +132,18 @@ textIndex *createTI(const char *fileName){
       if(curLength == 0){
         curLength = INIT_STRING_LENGTH;
         ti->text[textIndex] = malloc(curLength * sizeof(char));
-        //TODO: Error checking
+        if(ti->text[textIndex] == NULL){
+          return NULL;
+        }
       }
       else if(charIndex + 1 == curLength){
         //If necessary increase string's length
         //+1 is to make sure we always have an extra position for '\0'
         curLength *= 2;
         ti->text[textIndex] = realloc(ti->text[textIndex], curLength * sizeof(char));
-        //TODO: Error checking
+        if(ti->text[textIndex] == NULL){
+          return NULL;
+        }
       }
 
       ti->text[textIndex][charIndex] = c;

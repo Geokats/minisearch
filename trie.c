@@ -67,7 +67,6 @@ void printResult(int index, int textIndex, float score, char *str, char **keyWor
   int frontSpace = printf("%d.(%d)[%.4f] ", index, textIndex, score);
 
   int *underline = malloc(length * sizeof(int));
-  //TODO: Error checking
   for(int i = 0; i < length; i++){
     underline[i] = 0;
   }
@@ -75,7 +74,6 @@ void printResult(int index, int textIndex, float score, char *str, char **keyWor
   int bufferSize = 100;
   int bufferIndex = 0;
   char *buffer = malloc(bufferSize * sizeof(char));
-  //TODO: Error checking
 
   int afterSpace = 1;
   int spaceLeft = length - frontSpace;
@@ -121,7 +119,6 @@ void printResult(int index, int textIndex, float score, char *str, char **keyWor
         //If needed increase buffer size
         bufferSize *= 2;
         buffer = realloc(buffer, bufferSize * sizeof(char));
-        //TODO: Error checking
       }
 
       buffer[bufferIndex] = str[i];
@@ -301,12 +298,16 @@ int insertWordTrie(trie *t, char *word, int textIndex){
     if(cur == NULL){
       //If we reach the end without finding the node
       new = createTN(prev, NULL, parent, NULL, word[wordIndex], NULL);
-      //TODO: Error checking
+      if(new == NULL){
+        return 0;
+      }
     }
     else if(getValueTN(cur) != word[wordIndex]){
       //If we don't find the node but haven't reached the end
       new = createTN(prev, cur, parent, NULL, word[wordIndex], NULL);
-      //TODO: Error checking
+      if(new == NULL){
+        return 0;
+      }
     }
 
     if(new != NULL){
@@ -342,12 +343,15 @@ int insertWordTrie(trie *t, char *word, int textIndex){
   //Go back to the target node (we skipped it because of how the loop works)
   cur = parent;
   if((pl = getPostingListTN(cur)) != NULL){
-    addAppearancePL(pl, textIndex);
-    //TODO: Error checking
+    if(addAppearancePL(pl, textIndex) == 0){
+      return 0;
+    }
   }
   else{
     pl = createPL(textIndex, 1);
-    //TODO: Error checking
+    if(pl == NULL){
+      return 0;
+    }
     setPostingListTN(cur, pl);
   }
   return 1;
@@ -365,8 +369,9 @@ int insertStringTrie(trie *t, char *str, int textIndex){
       else{
         temp = str[i]; //Temporarily set the whitespace to '\0' in order
         str[i] = '\0'; //to pass a string containing only one word
-        insertWordTrie(t, word, textIndex);
-        //TODO: Error checking
+        if(insertWordTrie(t, word, textIndex) == 0){
+          return 0;
+        }
         str[i] = temp;
         word = NULL; //Start looking for a new word
       }
@@ -378,7 +383,9 @@ int insertStringTrie(trie *t, char *str, int textIndex){
 
   if(word != NULL){
     //If the string doesn't have any whitespace at the end we might miss a word
-    insertWordTrie(t, word, textIndex);
+    if(insertWordTrie(t, word, textIndex) == 0){
+      return 0;
+    }
   }
 
   return 1;
@@ -402,8 +409,10 @@ trie *createTrie(textIndex *ti){
     printf("\rInserting text in trie (%d/%d lines) [%d%%]", i+1, textCount, (i+1)*100/textCount);
     fflush(stdout);
 
-    insertStringTrie(t, getTextTI(ti, i), i);
-    //TODO: Error checking
+    if(insertStringTrie(t, getTextTI(ti, i), i) == 0){
+      return NULL;
+    }
+
   }
   printf(" Done!\n");
 
@@ -522,7 +531,6 @@ void printQueryTrie(trie *t, char **q, int k){
   int resultIndex = -1;
   int *indices = malloc(resultSize * sizeof(int));
   float *scores = malloc(resultSize * sizeof(float));
-  //TODO: Error checking
 
   int curIndex;
   while((curIndex = getMinIndex(pl, 10)) != -1){
@@ -533,7 +541,6 @@ void printQueryTrie(trie *t, char **q, int k){
       resultSize *= 2;
       indices = realloc(indices, resultSize * sizeof(int));
       scores = realloc(scores, resultSize * sizeof(float));
-      //TODO: Error checking
     }
 
     indices[resultIndex] = curIndex;
